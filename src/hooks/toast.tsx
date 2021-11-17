@@ -31,10 +31,10 @@ const ToastProvider: React.FC = ({ children }) => {
     const removeToast = useCallback((id: string) => {
         setMessages(state => state.filter(message => message.id !== id))
     }, []);
-    
+
     return (
         <ToastContext.Provider value={{ addToast, removeToast }}>
-            { children }
+            {children}
             <ToastContainer messages={messages} />
         </ToastContext.Provider>
     )

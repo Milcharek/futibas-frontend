@@ -4,18 +4,29 @@ import { FormHandles } from '@unform/core';
 import { Form } from '@unform/web';
 import * as Yup from 'yup';
 import getValidationErrors from '../../utils/getValidationErrors';
+import { Link, useHistory } from 'react-router-dom';
+import api from '../../services/api';
+import { useToast } from '../../hooks/toast';
 
 import logoImg from '../../assets/logo.svg';
 
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 
-import { Container, Content, Background } from './styles'
+import { Container, Content, AnimationContainer, Background } from './styles'
 
-const SignUp: React.FC = () =>  {
+interface SignUpFormData {
+    name: string;
+    email: string;
+    password: string;
+}
+
+const SignUp: React.FC = () => {
     const formRef = useRef<FormHandles>(null);
+    const { addToast } = useToast();
+    const history = useHistory();
 
-    const handleSubmit = useCallback(async (data: object) => {
+    const handleSubmit = useCallback(async (data: SignUpFormData) => {
         try {
             formRef.current?.setErrors({});
 
@@ -29,37 +40,58 @@ const SignUp: React.FC = () =>  {
                 abortEarly: false,
             });
 
-        } catch (err) {
-            const errors = getValidationErrors(err as Yup.ValidationError);
+            await api.post('/users', data);
 
-            formRef.current?.setErrors(errors);
-        } 
-    }, []);
+            history.push('/');
+
+            addToast({
+                type: 'success',
+                title: 'Cadastro realizado com sucesso!',
+                description: 'Você já pode fazer login no Futibas!'
+            });
+
+        } catch (err) {
+            if (err instanceof Yup.ValidationError) {
+                const errors = getValidationErrors(err as Yup.ValidationError);
+
+                formRef.current?.setErrors(errors);
+
+                return;
+            }
+
+            addToast({
+                type: 'error',
+                title: 'Erro ao cadastrar novo usuário',
+                description: 'Ocorreu um erro ao realizar o cadastro, cheque os dados inseridos.'
+            });
+        }
+    }, [addToast, history]);
 
     return (
-        <Container> 
-            <Background />  
-
+        <Container>
+            <Background />
             <Content>
-                <img src={logoImg} alt="GoBarber" />
+                <AnimationContainer>
+                    <img src={logoImg} alt="GoBarber" />
 
-                <Form ref={formRef} onSubmit={handleSubmit}>
-                    <h1>Faça seu cadastro</h1>
-                    
-                    <Input name="name" icon={FiUser} placeholder="Nome" />
+                    <Form ref={formRef} onSubmit={handleSubmit}>
+                        <h1>Faça seu cadastro</h1>
 
-                    <Input name="email" icon={FiMail} placeholder="E-mail" />
-                    
-                    <Input name="password" icon={FiLock} type="password" placeholder="Senha" />
-                
-                    <Button type="submit">Cadastrar</Button>
+                        <Input name="name" icon={FiUser} placeholder="Nome" />
 
-                </Form>
+                        <Input name="email" icon={FiMail} placeholder="E-mail" />
 
-                <a href="login">
-                    <FiArrowLeft />
-                    Voltar para logon
-                </a>
+                        <Input name="password" icon={FiLock} type="password" placeholder="Senha" />
+
+                        <Button type="submit">Cadastrar</Button>
+
+                    </Form>
+
+                    <Link to="/">
+                        <FiArrowLeft />
+                        Voltar para logon
+                    </Link>
+                </AnimationContainer>
             </Content>
         </Container>
     )
